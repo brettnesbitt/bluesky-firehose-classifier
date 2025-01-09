@@ -1,0 +1,72 @@
+# Compiled binaries and executables
+*.exe
+*.o
+*.a
+*.so
+*.dylib
+*.elf
+*.ko
+bin
+
+# Go-specific
+*.out
+.DS_Store
+*.test
+_test
+_obj
+_testmain.go
+*.gcda
+*.gcno
+
+# Python-specific
+*.pyc
+__pycache__/
+*.egg-info
+dist/
+build/
+develop-eggs/
+.pytest_cache/
+.coverage
+*.swp
+*~
+.DS_Store
+.venv/
+env/
+venv/
+ENV/
+
+# Editors and IDEs
+.idea/           # IntelliJ IDEA
+.vscode/         # VS Code
+*.iml            # IntelliJ IDEA
+*.ipr            # IntelliJ IDEA
+*.iws            # IntelliJ IDEA
+.DS_Store       # macOS Finder
+Thumbs.db        # Windows thumbnail cache
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Log files and temporary files
+*.log
+*.tmp
+tmp/
+temp/
+*.swp
+*~
+# Environment files
+.env
+*.env
+
+# Packages
+node_modules/
+vendor/ # Go dependencies (if using `go mod vendor`)
+
+# Other
+report.xml
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~
