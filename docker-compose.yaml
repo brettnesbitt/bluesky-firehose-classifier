@@ -1,0 +1,31 @@
+services:
+  bluesky-firehose-classifier:
+    build:
+      context: .       
+      dockerfile: Dockerfile 
+      platforms:
+        - "linux/amd64"
+        - "linux/arm64"
+    ports:
+      - "3000:3000"
+    profiles: ["default"]
+  text-category-classifier:
+    build:
+      context: ./python/text-category-classifier  
+      dockerfile: Dockerfile 
+      platforms:
+        - "linux/amd64"
+        - "linux/arm64"
+    ports:
+      - "3001:3001"
+    profiles: ["text-category-classifier"]
+  text-finsentiment-classifier:
+    build:
+      context: ./python/text-finsentiment-classifier
+      dockerfile: Dockerfile 
+      platforms:
+        - "linux/amd64"
+        - "linux/arm64"
+    ports:
+      - "3001:3001"    
+    profiles: ["text-fin-sentiment-classifier"]
