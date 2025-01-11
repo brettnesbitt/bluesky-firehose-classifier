@@ -2,7 +2,9 @@ package ws
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/websocket"
 
@@ -50,7 +52,15 @@ func ConsumeMessages(conn *websocket.Conn, rules *domain.RuleFactory, processors
 		passed, _ := rules.EvaluateAll(m.Commit.Record.Text)
 		if passed {
 			processed, _ := processors.ProcessAll(m.Commit.Record.Text)
+
+			fmt.Println(processed, "........$")
+
+			m.Categories = strings.Split(processed["TextCategoryClassifier"], " and ")
+			m.FinSentiment = processed["TextFinSentimentClassifier"]
 			dc.Add(m)
+
+			fmt.Println("........")
+			fmt.Println(m)
 		}
 
 	}
