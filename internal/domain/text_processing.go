@@ -12,7 +12,7 @@ type TextProcessor struct {
 	Evaluate    func(text string) (string, error)
 }
 
-// helps create and manage processors
+// helps create and manage processors.
 type TextProcessorFactory struct {
 	processors []TextProcessor
 }
@@ -56,7 +56,7 @@ func InitProcessors(cfg *config.AppConfig) *TextProcessorFactory {
 			}
 
 			if resp == nil || (*resp)[0].Label == "" {
-				return "", errors.New("Response is nil in API call.")
+				return "", errors.New("response is nil in API call")
 			}
 
 			return (*resp)[0].Label, nil
@@ -79,7 +79,7 @@ func InitProcessors(cfg *config.AppConfig) *TextProcessorFactory {
 			}
 
 			if resp == nil {
-				return "", errors.New("Response is nil in API call.")
+				return "", errors.New("response is nil in API call")
 			}
 
 			return (*resp)[0].Label, nil

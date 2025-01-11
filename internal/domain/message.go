@@ -43,14 +43,16 @@ func (c Commit) String() string {
 }
 
 type Message struct {
-	DID    string  `json:"did"`
-	TimeUS float32 `json:"time_us"`
-	Kind   string  `json:"kind"`
-	Commit Commit  `json:"commit"`
+	DID          string  `json:"did"`
+	TimeUS       float32 `json:"time_us"`
+	Kind         string  `json:"kind"`
+	Commit       Commit  `json:"commit"`
+	Categories   []string
+	FinSentiment string
 }
 
 func (m Message) String() string {
-	return fmt.Sprintf("DID: %s \nTimeUS: %d \nKind: %s \nCommit:\n%s", m.DID, int(m.TimeUS), m.Kind, m.Commit)
+	return fmt.Sprintf("DID: %s \nTimeUS: %d \nKind: %s \nCommit:\n%s \nCategories: %s\nFinSentiment: %s", m.DID, int(m.TimeUS), m.Kind, m.Commit, m.Categories, m.FinSentiment)
 }
 
 func (m *Message) UnmarshalJSON(b []byte) error {

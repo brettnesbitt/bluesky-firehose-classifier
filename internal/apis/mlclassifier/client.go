@@ -10,13 +10,13 @@ import (
 
 type Client struct {
 	BaseURL    string
-	HttpClient *http.Client
+	HTTPClient *http.Client
 }
 
 func NewClient(baseURL string) *Client {
 	return &Client{
 		BaseURL:    baseURL,
-		HttpClient: &http.Client{},
+		HTTPClient: &http.Client{},
 	}
 }
 
@@ -35,7 +35,7 @@ func (c *Client) Classify(requestData DataRequest) (*[]DataResponseItem, error) 
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.HttpClient.Do(req)
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("making request: %w", err)
 	}
