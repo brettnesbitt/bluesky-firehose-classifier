@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"stockseer.ai/blueksy-firehose/internal/logger"
+	"stockseer.ai/blueksy-firehose/internal/appcontext"
 )
 
 // DataCollector struct to hold data.
@@ -62,8 +62,10 @@ func (dc *DataCollector) LogMetrics() {
 	dc.callCount += 1
 }
 
-func (dc *DataCollector) StartMetrics() error {
+func (dc *DataCollector) StartMetrics(appCtx appcontext.AppContext) error {
+	logger := appCtx.Log
 	logger.Info("Metrics collection started")
+
 	ticker := time.NewTicker(1 * time.Second)
 	quit := make(chan struct{})
 	go func() {

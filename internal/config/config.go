@@ -9,6 +9,7 @@ import (
 )
 
 type AppConfig struct {
+	DevMode      bool
 	ServerPort   int
 	JetstreamURL string
 
@@ -61,6 +62,7 @@ func LoadConfig() (*AppConfig, error) {
 	}
 
 	cfg := &AppConfig{
+		DevMode:                       viper.GetBool("DEV_MODE"),
 		ServerPort:                    viper.GetInt("SERVER_PORT"),
 		JetstreamURL:                  viper.GetString("JETSTREAM_URL"),
 		RuleEnglishOnly:               viper.GetBool("RULE_ENGLISH_ONLY"),
