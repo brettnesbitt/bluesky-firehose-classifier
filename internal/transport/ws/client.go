@@ -1,19 +1,23 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/gorilla/websocket"
 
-	"stockseer.ai/blueksy-firehose/internal/config"
+	"stockseer.ai/blueksy-firehose/internal/appcontext"
 	"stockseer.ai/blueksy-firehose/internal/domain"
-	"stockseer.ai/blueksy-firehose/internal/logger"
 )
 
-func StartWebSocketClient(cfg *config.AppConfig, rules *domain.RuleFactory, processors *domain.TextProcessorFactory) {
+func StartWebSocketClient(ctx context.Context, rules *domain.RuleFactory, processors *domain.TextProcessorFactory) {
+	// get our app config and logger
+	appCtx, _ := appcontext.AppContextFromContext(ctx)
+	cfg := appCtx.Config
+	logger := appCtx.Log
+
 	uri := cfg.JetstreamURL
 	conn, resp, _ := websocket.DefaultDialer.Dial(uri, http.Header{})
 	defer conn.Close()
@@ -21,14 +25,16 @@ func StartWebSocketClient(cfg *config.AppConfig, rules *domain.RuleFactory, proc
 
 	logger.Info("Connected to WebSocket", "url", uri)
 
-	ConsumeMessages(conn, rules, processors)
+	ConsumeMessages(appCtx, conn, rules, processors)
 }
 
-func ConsumeMessages(conn *websocket.Conn, rules *domain.RuleFactory, processors *domain.TextProcessorFactory) {
+func ConsumeMessages(appCtx appcontext.AppContext, conn *websocket.Conn, rules *domain.RuleFactory, processors *domain.TextProcessorFactory) {
+
+	logger := appCtx.Log
 
 	// add data collector for metrics collection
 	dc := domain.DataCollector{}
-	metricsErr := dc.StartMetrics()
+	metricsErr := dc.StartMetrics(appCtx)
 
 	if metricsErr != nil {
 		logger.Error("failed to start metrics collection...", metricsErr)
@@ -53,14 +59,11 @@ func ConsumeMessages(conn *websocket.Conn, rules *domain.RuleFactory, processors
 		if passed {
 			processed, _ := processors.ProcessAll(m.Commit.Record.Text)
 
-			fmt.Println(processed, "........$")
-
 			m.Categories = strings.Split(processed["TextCategoryClassifier"], " and ")
 			m.FinSentiment = processed["TextFinSentimentClassifier"]
 			dc.Add(m)
 
-			fmt.Println("........")
-			fmt.Println(m)
+			logger.Debug("Record: \n %s \n\n", m)
 		}
 
 	}

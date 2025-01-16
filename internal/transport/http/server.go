@@ -7,13 +7,18 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"stockseer.ai/blueksy-firehose/internal/config"
+	"stockseer.ai/blueksy-firehose/internal/appcontext"
 	httphandlers "stockseer.ai/blueksy-firehose/internal/handlers/http"
-	"stockseer.ai/blueksy-firehose/internal/logger"
 )
 
 // StartServer starts the Gin server.
-func StartServer(ctx context.Context, cfg *config.AppConfig) error {
+func StartServer(ctx context.Context) error {
+
+	// get our app config and logger
+	appCtx, _ := appcontext.AppContextFromContext(ctx)
+	cfg := appCtx.Config
+	logger := appCtx.Log
+
 	// Create a default gin router
 	router := gin.Default()
 	addr := fmt.Sprintf(":%d", cfg.ServerPort)
