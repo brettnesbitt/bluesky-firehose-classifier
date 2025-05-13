@@ -9,10 +9,11 @@ import (
 )
 
 type AppConfig struct {
-	DevMode      bool
-	ServerPort   int
-	JetstreamURL string
-
+	DevMode                    bool
+	Host                       string
+	ServerPort                 int
+	JetstreamURL               string
+	MongoURI                   string
 	RuleEnglishOnly            bool
 	RuleMinLength              bool
 	RuleMinLengthValue         int
@@ -33,6 +34,8 @@ func (c AppConfig) String() string {
 	var sb strings.Builder
 
 	sb.WriteString("App Configuration:\n")
+	sb.WriteString(fmt.Sprintf("  Dev Mode: %t\n", c.DevMode))
+	sb.WriteString(fmt.Sprintf("  Host: %s\n", c.Host))
 	sb.WriteString(fmt.Sprintf("  Server Port: %d\n", c.ServerPort))
 	sb.WriteString(fmt.Sprintf("  Jetstream URL: %s\n", c.JetstreamURL))
 
@@ -63,13 +66,17 @@ func LoadConfig() (*AppConfig, error) {
 
 	cfg := &AppConfig{
 		DevMode:                       viper.GetBool("DEV_MODE"),
+		Host:                          viper.GetString("HOST"),
 		ServerPort:                    viper.GetInt("SERVER_PORT"),
 		JetstreamURL:                  viper.GetString("JETSTREAM_URL"),
+		MongoURI:                      viper.GetString("MONGO_URI"),
 		RuleEnglishOnly:               viper.GetBool("RULE_ENGLISH_ONLY"),
 		RuleMinLength:                 viper.GetBool("RULE_MIN_LENGTH"),
 		RuleMinLengthValue:            viper.GetInt("RULE_MIN_LENGTH_VALUE"),
 		RuleContainsKeywords:          viper.GetBool("RULE_CONTAINS_KEYWORDS"),
 		RuleContainsKeywordsValues:    viper.GetString("RULE_CONTAINS_KEYWORDS_VALUE"),
+		RuleContainsHashtag:           viper.GetBool("RULE_CONTAINS_HASHTAG"),
+		RuleContainsHashtagValues:     viper.GetString("RULE_CONTAINS_HASHTAG_VALUE"),
 		TextCategoryClassifier:        viper.GetBool("TEXT_CATEGORY_CLASSIFIER"),
 		TextFinSentimentClassifier:    viper.GetBool("TEXT_FIN_SENTIMENT_CLASSIFIER"),
 		TextCategoryClassifierURL:     viper.GetString("TEXT_CATEGORY_CLASSIFIER_URL"),

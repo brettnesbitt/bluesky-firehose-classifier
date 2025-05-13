@@ -30,7 +30,8 @@ func main() {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
-	log.Info(fmt.Sprintf("DEV MODE: %s", strconv.FormatBool(cfg.DevMode)))
+	const devModeFormat = "DEV MODE: %s"
+	log.Info(devModeFormat, strconv.FormatBool(cfg.DevMode))
 
 	// Create a context with cancellation.
 	ctx, cancel := context.WithCancel(context.Background())
