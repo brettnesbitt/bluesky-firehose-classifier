@@ -1,4 +1,14 @@
 services:
+  mongo:
+    image: mongo:latest
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
   bluesky-firehose-classifier:
     build:
       context: .       
@@ -17,7 +27,7 @@ services:
         - "linux/amd64"
         - "linux/arm64"
     ports:
-      - "3001:3001"
+      - "3101:3101"
     profiles: ["text-category-classifier"]
   text-finsentiment-classifier:
     build:
@@ -27,5 +37,5 @@ services:
         - "linux/amd64"
         - "linux/arm64"
     ports:
-      - "3001:3001"    
+      - "3100:3100"    
     profiles: ["text-fin-sentiment-classifier"]

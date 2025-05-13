@@ -21,7 +21,7 @@ func StartServer(ctx context.Context) error {
 
 	// Create a default gin router
 	router := gin.Default()
-	addr := fmt.Sprintf(":%d", cfg.ServerPort)
+	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.ServerPort)
 
 	httphandlers.RegisterHealthzRoutes(router)
 

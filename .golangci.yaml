@@ -26,10 +26,16 @@ linters:
 
 # Configure specific linters.
 linters-settings:
+  staticcheck:
+    checks:
+      - all
+      - '-SA5003'
   govet:
     shadow: true
   misspell:
     locale: US
+    ignore-words:
+      - labour
 
 # Exclude files and directories.
 exclude-rules:
