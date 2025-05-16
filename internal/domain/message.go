@@ -51,6 +51,14 @@ type Message struct {
 	FinSentiment string
 }
 
+func (m Message) ToJSON() (string, error) {
+	jsonData, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonData), nil
+}
+
 func (m Message) String() string {
 	return fmt.Sprintf("DID: %s \nTimeUS: %d \nKind: %s \nCommit:\n%s \nCategories: %s\nFinSentiment: %s", m.DID, int(m.TimeUS), m.Kind, m.Commit, m.Categories, m.FinSentiment)
 }

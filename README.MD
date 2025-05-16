@@ -1,16 +1,30 @@
 # bluesky-firehose-classifier
 
-This application connects to the Bluesky JetStream web socket and consumes json data for text processing. With this
-application you can easily apply filters to determine what data you consume and send it downstream through built in 
-text classifiers, or you can simply use the application to publish Bluesky data to an MQTT broker for consumption.
+## MQTT Configuration
+To enable MQTT publishing, set the following environment variables:
 
-At this time the application only consumes new posts, but can be modified to fit needs easy enough.
+- `MQTT_BROKER_URL`: The URL of the MQTT broker.
+- `MQTT_USERNAME`: Your MQTT broker username.
+- `MQTT_PASSWORD`: Your MQTT broker password.
+- `MQTT_ENABLED`: Set to `true` to enable MQTT publishing.
+- `MQTT_BROKER_URL`: The URL of the MQTT broker.
+- `MQTT_USERNAME`: Your MQTT broker username.
+- `MQTT_PASSWORD`: Your MQTT broker password.
+- `MQTT_TOPIC`: The topic to which messages will be published.
+
+Ensure these environment variables are set in your `.env` file or in your environment before running the application.
+
+The `bluesky-firehose-classifier` is a robust application designed to connect to the Bluesky JetStream WebSocket, consuming JSON data for advanced text processing. This application allows you to apply filters to incoming data, process it with built-in text classifiers, or publish it to an MQTT broker for further consumption. It is currently optimized for processing new posts but can be easily adapted to meet specific needs.
+
+## Key Features
+
+- **Data Filtering**: Apply custom filters to control the data flow and focus on relevant content.
+- **Text Classification**: Utilize integrated classifiers to analyze and categorize text data.
+- **MQTT Integration**: Seamlessly publish processed data to an MQTT broker for downstream applications.
 
 ## Getting Started
 
-Generally, `go run main.go` to run the app, modify the .env file to change up basic configuration. For more advanced
-use-cases you can use `make build` or `make docker-build` for building the application. To run the app you can use 
-`make run` or `make docker-up` depending on your preference.
+To run the application, use `go run main.go` or modify the `.env` file for basic configuration. For more advanced use-cases, you can build the application using `make build` or `make docker-build`. To run the app, choose between `make run` or `make docker-up` based on your preference.
 
 ### Dotenvx
 

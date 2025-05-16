@@ -10,6 +10,12 @@ import (
 
 type AppConfig struct {
 	DevMode                    bool
+	MQTTEnabled                bool
+	MQTTBrokerURL              string
+	MQTTUsername               string
+	MQTTPassword               string
+	MQTTMetricsTopic           string
+	MQTTMessagesTopic          string
 	Host                       string
 	ServerPort                 int
 	JetstreamURL               string
@@ -81,6 +87,12 @@ func LoadConfig() (*AppConfig, error) {
 		TextFinSentimentClassifier:    viper.GetBool("TEXT_FIN_SENTIMENT_CLASSIFIER"),
 		TextCategoryClassifierURL:     viper.GetString("TEXT_CATEGORY_CLASSIFIER_URL"),
 		TextFinSentimentClassifierURL: viper.GetString("TEXT_FIN_SENTIMENT_CLASSIFIER_URL"),
+		MQTTEnabled:                   viper.GetBool("MQTT_ENABLED"),
+		MQTTMetricsTopic:              viper.GetString("MQTT_METRICS_TOPIC"),
+		MQTTMessagesTopic:             viper.GetString("MQTT_MESSAGES_TOPIC"),
+		MQTTBrokerURL:                 viper.GetString("MQTT_BROKER_URL"),
+		MQTTUsername:                  viper.GetString("MQTT_USERNAME"),
+		MQTTPassword:                  viper.GetString("MQTT_PASSWORD"),
 	}
 
 	return cfg, nil

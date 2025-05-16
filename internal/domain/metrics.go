@@ -1,15 +1,16 @@
 package domain
 
 import (
+	"encoding/json"
 	"time"
 
 	"stockseer.ai/blueksy-firehose/internal/appcontext"
+	"stockseer.ai/blueksy-firehose/internal/transport/mqtt"
 )
 
 // Categories we want to track sentiment for.
 var trackedCategories = []string{"labour", "politics", "economy", "conflict"}
 
-// DataCollector struct to hold data.
 type DataCollector struct {
 	AppCtx    appcontext.AppContext
 	data      []Message
@@ -28,6 +29,13 @@ func (dc *DataCollector) Add(message Message) error {
 		err := dc.AppCtx.MessageRepo.Insert(message)
 		if err != nil {
 			return err
+		}
+		if dc.AppCtx.Config.MQTTEnabled {
+			jsonString, err := message.ToJSON()
+			if err != nil {
+				return err
+			}
+			mqtt.PublishToMQTT(dc.AppCtx, dc.AppCtx.Config.MQTTMessagesTopic, jsonString)
 		}
 	}
 	// Check the length and pop the oldest entry if needed
@@ -95,6 +103,14 @@ func containsCategory(categories []string, category string) bool {
 	return false
 }
 
+func (cm CategoryMetrics) ToJSON() (string, error) {
+	jsonData, err := json.Marshal(cm)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonData), nil
+}
+
 type CategoryMetrics struct {
 	Negative  int
 	Positive  int
@@ -144,6 +160,14 @@ func (dc *DataCollector) LogMetrics() {
 		err := dc.AppCtx.MetricsRepo.Insert(metrics)
 		if err != nil {
 			dc.AppCtx.Log.Error("Error storing metrics", err)
+		}
+		if dc.AppCtx.Config.MQTTEnabled {
+			jsonString, err := metrics.ToJSON()
+			if err != nil {
+				dc.AppCtx.Log.Error("Error converting metrics to JSON", err)
+				return
+			}
+			mqtt.PublishToMQTT(dc.AppCtx, dc.AppCtx.Config.MQTTMetricsTopic, jsonString)
 		}
 	}
 
