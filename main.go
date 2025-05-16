@@ -10,6 +10,7 @@ import (
 	"stockseer.ai/blueksy-firehose/internal/config"
 	"stockseer.ai/blueksy-firehose/internal/domain"
 	server "stockseer.ai/blueksy-firehose/internal/transport/http"
+	"stockseer.ai/blueksy-firehose/internal/transport/mqtt"
 	"stockseer.ai/blueksy-firehose/internal/transport/ws"
 )
 
@@ -47,6 +48,11 @@ func main() {
 			log.Error("server failed to start", servererr)
 		}
 	}()
+
+	// Initialize MQTT client if enabled, ensures that we can connect...
+	if cfg.MQTTEnabled {
+		mqtt.InitMQTTClient(appContext)
+	}
 
 	// initialize our rules that govern what data to consume
 	rules := domain.InitRules(cfg)
