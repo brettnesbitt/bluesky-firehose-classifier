@@ -41,7 +41,13 @@ build: lint test benchmark
 	@go mod tidy
 	@CGO_ENABLED=0 go build -o bin/bluesky-firehose-classifier -v $(BUILD_FLAGS) ./main.go
 
-docker-build: build
+build-app-only:
+	@echo "Building..."
+	@go mod tidy
+	@CGO_ENABLED=0 go build -o bin/bluesky-firehose-classifier -v $(BUILD_FLAGS) ./main.go
+
+# Build the docker image
+docker-build: build-app-only
 	@docker compose build
 
 docker-up: docker-build

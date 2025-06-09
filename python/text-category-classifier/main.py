@@ -22,6 +22,10 @@ class TextItem(BaseModel):
 class RequestData(BaseModel):
     items: List[TextItem]
 
+@app.route("/livez", methods=["GET"])
+def health_check():
+    return jsonify({"status": "ok"}), 200
+
 @app.route("/classify", methods=["POST"])
 def classify_text():
     try:

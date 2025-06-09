@@ -15,6 +15,7 @@ try:
     tokenizer = BertTokenizer.from_pretrained("ahmedrachid/FinancialBERT-Sentiment-Analysis")
 
     classifier = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
+    print("Classifier loaded successfully!")
 except Exception as e:
     print(f"Error loading classifier: {e}")
     exit(1) #Exit if the classifier fails to load
@@ -24,6 +25,10 @@ class TextItem(BaseModel):
 
 class RequestData(BaseModel):
     items: List[TextItem]
+
+@app.route("/livez", methods=["GET"])
+def health_check():
+    return jsonify({"status": "ok"}), 200
 
 @app.route("/classify", methods=["POST"])
 def classify_text():

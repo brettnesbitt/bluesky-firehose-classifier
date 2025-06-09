@@ -2,6 +2,8 @@ package domain
 
 import (
 	"encoding/json"
+	"strings"
+	"sync"
 	"time"
 
 	"stockseer.ai/blueksy-firehose/internal/appcontext"
@@ -11,11 +13,33 @@ import (
 // Categories we want to track sentiment for.
 var trackedCategories = []string{"labour", "politics", "economy", "conflict"}
 
+var intervalSecs = 60
+
+// DataCollector safely collects and aggregates metrics from concurrent sources.
 type DataCollector struct {
-	AppCtx    appcontext.AppContext
-	data      []Message
-	lastIdx   int // last metric idx observed
-	callCount int // number of calls to log metrics
+	AppCtx appcontext.AppContext
+
+	// Mutex to protect concurrent access to the fields below
+	mu sync.RWMutex
+
+	// --- Overall Metrics ---
+	totalPosts  int64
+	totalTokens int64
+
+	// --- "Since Last Log" Metrics ---
+	// These are aggregated on Add and reset on LogMetrics
+	postsSinceLog       int
+	tokensSinceLog      int
+	sentimentSinceLog   map[string]*CategoryMetrics
+	periodicCallCounter int
+}
+
+// NewDataCollector creates and initializes a new DataCollector.
+func NewDataCollector(appCtx appcontext.AppContext) *DataCollector {
+	return &DataCollector{
+		AppCtx:            appCtx,
+		sentimentSinceLog: make(map[string]*CategoryMetrics),
+	}
 }
 
 // shouldStoreMessage checks if a message has a positive or negative financial sentiment.
@@ -23,74 +47,123 @@ func shouldStoreMessage(message Message) bool {
 	return message.FinSentiment == "positive" || message.FinSentiment == "negative"
 }
 
-// AddData adds a new data point to the collector.
+// Add safely adds a new data point, updating aggregated metrics.
 func (dc *DataCollector) Add(message Message) error {
+	// Store the message first if it meets criteria
 	if shouldStoreMessage(message) {
 		err := dc.AppCtx.MessageRepo.Insert(message)
 		if err != nil {
-			return err
+			return err // Return early on storage error
 		}
 		if dc.AppCtx.Config.MQTTEnabled {
 			jsonString, err := message.ToJSON()
 			if err != nil {
-				return err
+				return err // Return early on JSON error
 			}
 			mqtt.PublishToMQTT(dc.AppCtx, dc.AppCtx.Config.MQTTMessagesTopic, jsonString)
 		}
 	}
-	// Check the length and pop the oldest entry if needed
-	if len(dc.data) >= 100 {
-		dc.data = dc.data[1:] // Remove the first element
+
+	// --- Lock for the remainder of the function to update metrics safely ---
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	// Update overall and periodic post counts
+	dc.totalPosts++
+	dc.postsSinceLog++
+
+	// Update overall and periodic token counts
+	// strings.Fields is a simple, effective way to count words/tokens.
+	messageTokens := len(strings.Fields(message.Commit.Record.Text))
+	dc.totalTokens += int64(messageTokens)
+	dc.tokensSinceLog += messageTokens
+
+	// Update sentiment counts for relevant categories
+	for _, category := range message.Categories {
+		// Only track categories we care about
+		if !containsCategory(trackedCategories, category) {
+			continue
+		}
+
+		if _, ok := dc.sentimentSinceLog[category]; !ok {
+			dc.sentimentSinceLog[category] = &CategoryMetrics{Category: category}
+		}
+
+		switch message.FinSentiment {
+		case "positive":
+			dc.sentimentSinceLog[category].Positive++
+		case "negative":
+			dc.sentimentSinceLog[category].Negative++
+		}
 	}
-	dc.data = append(dc.data, message)
 
 	return nil
 }
 
-// Clears data from DataCollector.
-func (dc *DataCollector) Clear() {
-	dc.data = dc.data[:0]
-}
+// LogMetrics logs the currently aggregated metrics and resets the periodic counters.
+func (dc *DataCollector) LogMetrics() {
+	// Lock for the entire duration to ensure a consistent snapshot of metrics is logged and reset
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
 
-// Returns the number of messages that are new posts.
-type PostMetrics struct {
-	Total     int
-	SinceLast int
-	Timestamp int64
-}
+	dc.periodicCallCounter++
 
-// Print outputs the contents of PostMetrics.
-func (pm *PostMetrics) Print(appCtx appcontext.AppContext) {
-	appCtx.Log.Info("Posts(sec): %d      Total Posts: %d", pm.SinceLast, pm.Total)
-}
+	// --- Log Post and Token Metrics ---
+	dc.AppCtx.Log.Info("Posts(sec): %d      Total Posts: %d", dc.postsSinceLog/intervalSecs, dc.totalPosts)
+	dc.AppCtx.Log.Info("Tokens(sec): %d     Total Tokens: %d       Calls: %d", dc.tokensSinceLog/intervalSecs, dc.totalTokens, dc.periodicCallCounter)
 
-func (dc *DataCollector) GetPostFrequency() PostMetrics {
-	sinceLast := len(dc.data) - dc.lastIdx
-	total := len(dc.data)
-	return PostMetrics{
-		Total:     total,
-		SinceLast: sinceLast,
-		Timestamp: time.Now().Unix(),
-	}
-}
-
-// Returns the number of messages that are new posts.
-func (dc *DataCollector) GetPostTokenCount() (total int, sinceLastCall int) {
-	total = 0
-	sinceLastCall = 0
-
-	tokens := ""
-
-	for idx, data := range dc.data {
-		total += len(data.Commit.Record.Text)
-		if idx >= dc.lastIdx {
-			sinceLastCall += len(data.Commit.Record.Text)
+	// --- Log Sentiment Metrics for each tracked category ---
+	for _, category := range trackedCategories {
+		metrics, ok := dc.sentimentSinceLog[category]
+		if !ok {
+			// If no posts for this category were seen, log zeroes to indicate it's still being tracked.
+			metrics = &CategoryMetrics{Category: category}
 		}
-		tokens += "\n\n****POST****\n"
-		tokens += data.Commit.Record.Text
+
+		metrics.Timestamp = time.Now().Unix()
+		metrics.Print(dc.AppCtx)
+
+		// Persist and publish metrics
+		err := dc.AppCtx.MetricsRepo.Insert(*metrics)
+		if err != nil {
+			dc.AppCtx.Log.Error("Error storing metrics", err)
+		}
+		if dc.AppCtx.Config.MQTTEnabled {
+			jsonString, err := metrics.ToJSON()
+			if err != nil {
+				dc.AppCtx.Log.Error("Error converting metrics to JSON", err)
+			} else {
+				mqtt.PublishToMQTT(dc.AppCtx, dc.AppCtx.Config.MQTTMetricsTopic, jsonString)
+			}
+		}
 	}
 
-	return
+	// --- CRITICAL: Reset the "since last log" counters for the next interval ---
+	dc.postsSinceLog = 0
+	dc.tokensSinceLog = 0
+	// Clear the map for the next batch of metrics
+	dc.sentimentSinceLog = make(map[string]*CategoryMetrics)
+}
+
+// StartMetrics begins the periodic logging of collected metrics.
+func (dc *DataCollector) StartMetrics(appCtx appcontext.AppContext) error {
+	dc.AppCtx = appCtx
+	dc.AppCtx.Log.Info("Metrics collection started")
+
+	ticker := time.NewTicker(time.Duration(intervalSecs) * time.Second)
+	// Immediately log once on startup without waiting for the first tick
+	go dc.LogMetrics()
+
+	go func() {
+		for {
+			// This select statement is blocking, so it's safe to not have a quit channel
+			// if this goroutine is meant to run for the lifetime of the application.
+			<-ticker.C
+			dc.LogMetrics()
+		}
+	}()
+
+	return nil
 }
 
 // Helper function to check if a category exists in the categories slice.
@@ -103,7 +176,16 @@ func containsCategory(categories []string, category string) bool {
 	return false
 }
 
-func (cm CategoryMetrics) ToJSON() (string, error) {
+// CategoryMetrics holds sentiment counts for a specific category.
+type CategoryMetrics struct {
+	Negative  int    `json:"negative"`
+	Positive  int    `json:"positive"`
+	Category  string `json:"category"`
+	Timestamp int64  `json:"timestamp"`
+}
+
+// ToJSON marshals the CategoryMetrics struct to a JSON string.
+func (cm *CategoryMetrics) ToJSON() (string, error) {
 	jsonData, err := json.Marshal(cm)
 	if err != nil {
 		return "", err
@@ -111,87 +193,7 @@ func (cm CategoryMetrics) ToJSON() (string, error) {
 	return string(jsonData), nil
 }
 
-type CategoryMetrics struct {
-	Negative  int
-	Positive  int
-	Category  string
-	Timestamp int64
-}
-
 // Print outputs the contents of CategoryMetrics.
 func (cm *CategoryMetrics) Print(appCtx appcontext.AppContext) {
 	appCtx.Log.Info("%-12s: Negative: %v      Positive: %v", cm.Category, cm.Negative, cm.Positive)
-}
-
-func (dc *DataCollector) GetSentimentFrequency(category string) CategoryMetrics {
-	sinceLastCall := make(map[string]int)
-
-	for idx, data := range dc.data {
-		if data.FinSentiment != "" && containsCategory(data.Categories, category) {
-			if idx >= dc.lastIdx {
-				sinceLastCall[data.FinSentiment]++
-			}
-		}
-	}
-
-	return CategoryMetrics{
-		Negative:  sinceLastCall["negative"],
-		Positive:  sinceLastCall["positive"],
-		Category:  category,
-		Timestamp: time.Now().Unix(),
-	}
-}
-
-func (dc *DataCollector) LogMetrics() {
-	postMetrics := dc.GetPostFrequency()
-	totalTokens, currentTokens := dc.GetPostTokenCount()
-
-	// Print basic metrics
-	postMetrics.Print(dc.AppCtx)
-	const logFormat = "Current Tokens: %d     Total Tokens: %d       Calls: %d"
-	dc.AppCtx.Log.Info(logFormat, currentTokens, totalTokens, dc.callCount)
-
-	// Print sentiment frequencies for each tracked category
-	for _, category := range trackedCategories {
-		metrics := dc.GetSentimentFrequency(category)
-
-		metrics.Print(dc.AppCtx)
-
-		err := dc.AppCtx.MetricsRepo.Insert(metrics)
-		if err != nil {
-			dc.AppCtx.Log.Error("Error storing metrics", err)
-		}
-		if dc.AppCtx.Config.MQTTEnabled {
-			jsonString, err := metrics.ToJSON()
-			if err != nil {
-				dc.AppCtx.Log.Error("Error converting metrics to JSON", err)
-				return
-			}
-			mqtt.PublishToMQTT(dc.AppCtx, dc.AppCtx.Config.MQTTMetricsTopic, jsonString)
-		}
-	}
-
-	dc.lastIdx = len(dc.data)
-	dc.callCount += 1
-}
-
-func (dc *DataCollector) StartMetrics(appCtx appcontext.AppContext) error {
-	dc.AppCtx = appCtx // Ensure AppCtx is assigned
-	dc.AppCtx.Log.Info("Metrics collection started")
-
-	ticker := time.NewTicker(60 * time.Second)
-	quit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				dc.LogMetrics()
-			case <-quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-
-	return nil
 }
