@@ -1,5 +1,6 @@
 services:
   mongo:
+    container_name: mongo
     image: mongo:latest
     restart: always
     environment:
@@ -9,7 +10,9 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    profiles: ["default", "mongo"]
   bluesky-firehose-classifier:
+    container_name: bluesky-firehose-classifier
     build:
       context: .       
       dockerfile: Dockerfile 
@@ -19,7 +22,11 @@ services:
     ports:
       - "3000:3000"
     profiles: ["default"]
+    depends_on:
+      - text-category-classifier
+      - text-finsentiment-classifier
   text-category-classifier:
+    container_name: text-category-classifier
     build:
       context: ./python/text-category-classifier  
       dockerfile: Dockerfile 
@@ -28,8 +35,14 @@ services:
         - "linux/arm64"
     ports:
       - "3101:3101"
-    profiles: ["text-category-classifier"]
+    profiles: ["default", "text-category-classifier"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3101/livez"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
   text-finsentiment-classifier:
+    container_name: text-finsentiment-classifier
     build:
       context: ./python/text-finsentiment-classifier
       dockerfile: Dockerfile 
@@ -38,4 +51,9 @@ services:
         - "linux/arm64"
     ports:
       - "3100:3100"    
-    profiles: ["text-fin-sentiment-classifier"]
+    profiles: ["default", "text-fin-sentiment-classifier"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3100/livez"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

@@ -6,6 +6,9 @@ FROM golang:1.22-alpine
 # Install make
 RUN apk add --no-cache make
 
+# Install golangci-lint
+RUN apk add --no-cache golangci-lint
+
 WORKDIR /app
 
 # Copy go.mod and go.sum first for caching
@@ -14,6 +17,8 @@ RUN go mod download
 
 # Copy our files
 COPY . .
+
+COPY .env.docker .env
 
 # Build the Go binary
 RUN make build
