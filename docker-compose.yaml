@@ -1,30 +1,29 @@
 services:
+  mqtt:
+    container_name: mqtt
+    image: eclipse-mosquitto:latest
+    restart: always
+    ports:
+      - "1883:1883"
+    profiles: ["default", "mqtt"]
+    post_start: 
+      - command: "touch /mosquitto/passwd_file && chmod 0700 /mosquitto/passwd_file && mosquitto_passwd -b /mosquitto/passwd_file guest guest"
+        user: root
+    volumes:
+      - ./includes/mosquitto.passwd:/mosquitto/passwd_file
+      - ./includes/mosquitto.conf:/mosquitto/config/mosquitto.conf
   mongo:
     container_name: mongo
     image: mongo:latest
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_ROOT_PASSWORD: adminpass
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/db
+      - /Users/brettnesbitt/workspace/mongo_data:/data/db
     profiles: ["default", "mongo"]
-  bluesky-firehose-classifier:
-    container_name: bluesky-firehose-classifier
-    build:
-      context: .       
-      dockerfile: Dockerfile 
-      platforms:
-        - "linux/amd64"
-        - "linux/arm64"
-    ports:
-      - "3000:3000"
-    profiles: ["default"]
-    depends_on:
-      - text-category-classifier
-      - text-finsentiment-classifier
   text-category-classifier:
     container_name: text-category-classifier
     build:
@@ -51,9 +50,40 @@ services:
         - "linux/arm64"
     ports:
       - "3100:3100"    
-    profiles: ["default", "text-fin-sentiment-classifier"]
+    profiles: ["default", "text-finsentiment-classifier"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3100/livez"]
       interval: 10s
       timeout: 5s
       retries: 3
+  bluesky-firehose-classifier-server:
+    container_name: bluesky-firehose-classifier-server
+    build:
+      context: .       
+      dockerfile: Dockerfile.server
+      platforms:
+        - "linux/amd64"
+        - "linux/arm64"
+    ports:
+      - "3000:3000"
+    profiles: ["default", "bluesky-firehose-classifier-server"]
+    #depends_on:
+    #  - text-category-classifier
+    #  - text-finsentiment-classifier
+  bluesky-firehose-classifier-wss:
+    container_name: bluesky-firehose-classifier-wss
+    build:
+      context: .       
+      dockerfile: Dockerfile.wss 
+      platforms:
+        - "linux/amd64"
+        - "linux/arm64"
+    profiles: ["default", "bluesky-firehose-classifier-wss"]
+    #depends_on:
+    #  - mongo
+    #  - text-category-classifier
+    #  - text-finsentiment-classifier
+
+volumes:
+  mongo-data:
+    driver: local

@@ -6,12 +6,13 @@ import (
 	"strings"
 
 	"stockseer.ai/blueksy-firehose/internal/config"
+	"stockseer.ai/blueksy-firehose/internal/models"
 )
 
 // Rule represents a single rule with a description and a function to evaluate it.
 type Rule struct {
 	Description string
-	Evaluate    func(text string) bool
+	Evaluate    func(text string, message *models.ProtoMessage) bool
 }
 
 // RuleFactory helps create and manage rules.
@@ -25,18 +26,24 @@ func NewRuleFactory() *RuleFactory {
 }
 
 // AddRule adds a new rule to the factory.
-func (rf *RuleFactory) AddRule(description string, evaluate func(text string) bool) {
+func (rf *RuleFactory) AddRule(
+	description string,
+	evaluate func(text string, message *models.ProtoMessage) bool,
+) {
 	rf.rules = append(rf.rules, Rule{Description: description, Evaluate: evaluate})
 }
 
 // EvaluateAll evaluates all rules against the given text and returns bool indicating if all passed
 // and a map of rule descriptions to results.
-func (rf *RuleFactory) EvaluateAll(text string) (bool, map[string]bool) {
+func (rf *RuleFactory) EvaluateAll(
+	text string,
+	message *models.ProtoMessage,
+) (bool, map[string]bool) {
 	results := make(map[string]bool)
 	allPass := true
 	for _, rule := range rf.rules {
-		valid := rule.Evaluate(text)
-		results[rule.Description] = rule.Evaluate(text)
+		valid := rule.Evaluate(text, message)
+		results[rule.Description] = valid
 		if !valid {
 			allPass = false
 		}
@@ -50,11 +57,10 @@ func (rf *RuleFactory) EvaluateAll(text string) (bool, map[string]bool) {
 * 	data that lands in our downstream ML models.
  */
 func InitRules(cfg *config.AppConfig) *RuleFactory {
-
 	rf := NewRuleFactory()
 
 	if cfg.RuleEnglishOnly {
-		rf.AddRule("English posts only", func(text string) bool {
+		rf.AddRule("English posts only", func(text string, message *models.ProtoMessage) bool {
 			return isLikelyEnglish(text)
 		})
 	}
@@ -63,7 +69,7 @@ func InitRules(cfg *config.AppConfig) *RuleFactory {
 	if cfg.RuleMinLength {
 		minLength := cfg.RuleMinLengthValue
 		description := fmt.Sprintf("Length greater than %d characters", minLength)
-		rf.AddRule(description, func(text string) bool {
+		rf.AddRule(description, func(text string, message *models.ProtoMessage) bool {
 			return len(text) > minLength
 		})
 	}
@@ -71,7 +77,7 @@ func InitRules(cfg *config.AppConfig) *RuleFactory {
 	// string with a url
 	if cfg.RuleContainsURL {
 		urlRegex := regexp.MustCompile(`(https?://)?([\w\.]+)\.([a-z]{2,6}\.?)?/?.*`)
-		rf.AddRule("Contains a URL", func(text string) bool {
+		rf.AddRule("Contains a URL", func(text string, message *models.ProtoMessage) bool {
 			return urlRegex.MatchString(text)
 		})
 	}
@@ -79,28 +85,50 @@ func InitRules(cfg *config.AppConfig) *RuleFactory {
 	// string contains specific keywords
 	if cfg.RuleContainsKeywords {
 		keywords := strings.Split(cfg.RuleContainsKeywordsValues, ",")
-		rf.AddRule("Contains relevant keywords", func(text string) bool {
-			textLower := strings.ToLower(text)
-			for _, keyword := range keywords {
-				if strings.Contains(textLower, keyword) {
-					return true
+		rf.AddRule(
+			"Contains relevant keywords",
+			func(text string, message *models.ProtoMessage) bool {
+				textLower := strings.ToLower(text)
+				for _, keyword := range keywords {
+					if strings.Contains(textLower, keyword) {
+						return true
+					}
 				}
-			}
-			return false
-		})
+				return false
+			},
+		)
 	}
 
 	// string contains specific hashtags
 	if cfg.RuleContainsHashtag {
 		hashtags := strings.Split(cfg.RuleContainsHashtagValues, ",")
-		rf.AddRule("Contains relevant hashtags", func(text string) bool {
-			textLower := strings.ToLower(text)
-			for _, hashtag := range hashtags {
-				if strings.Contains(textLower, fmt.Sprintf("#%s", hashtag)) {
-					return true
+		rf.AddRule(
+			"Contains relevant hashtags",
+			func(text string, message *models.ProtoMessage) bool {
+				textLower := strings.ToLower(text)
+				for _, hashtag := range hashtags {
+					if strings.Contains(textLower, fmt.Sprintf("#%s", hashtag)) {
+						return true
+					}
 				}
-			}
-			return false
+				return false
+			},
+		)
+	}
+
+	// message ProtoMessage is of kind x
+	if cfg.RuleMessageKind {
+		rf.AddRule("Kind is x", func(text string, message *models.ProtoMessage) bool {
+			fmt.Println("Kind: ", message.Kind)
+			return message.Kind == "app.bsky.feed.post"
+		})
+	}
+
+	// message ProtoMessage is of commit operation
+	if cfg.RuleMessageCommitOperation {
+		rf.AddRule("Commit operation", func(text string, message *models.ProtoMessage) bool {
+			fmt.Println("Commit: ", message.Commit)
+			return message.Commit != nil && message.Commit.Operation == "create"
 		})
 	}
 

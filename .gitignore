@@ -70,3 +70,5 @@ report.xml
 .idea/
 *.swp
 *~
+
+.golangci-lint

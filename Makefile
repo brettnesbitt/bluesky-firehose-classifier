@@ -37,24 +37,30 @@ benchmark:
 
 # Build the application
 build: lint test benchmark
-	@echo "Building..."
+	@echo "Building all binaries..."
 	@go mod tidy
-	@CGO_ENABLED=0 go build -o bin/bluesky-firehose-classifier -v $(BUILD_FLAGS) ./main.go
+	@echo "Building server..."
+	@CGO_ENABLED=0 go build -o bin/server -v $(BUILD_FLAGS) ./cmd/server
+	@echo "Building wss..."
+	@CGO_ENABLED=0 go build -o bin/wss -v $(BUILD_FLAGS) ./cmd/wss
 
 build-app-only:
-	@echo "Building..."
+	@echo "Building all binaries..."
 	@go mod tidy
-	@CGO_ENABLED=0 go build -o bin/bluesky-firehose-classifier -v $(BUILD_FLAGS) ./main.go
+	@echo "Building server..."
+	@CGO_ENABLED=0 go build -o bin/server -v $(BUILD_FLAGS) ./cmd/server
+	@echo "Building wss..."
+	@CGO_ENABLED=0 go build -o bin/wss -v $(BUILD_FLAGS) ./cmd/wss
 
 # Build the docker image
 docker-build: build-app-only
-	@docker compose build
+	@COMPOSE_PROFILES=$(COMPOSE_PROFILES) docker compose build
 
 docker-up: docker-build
-	@docker compose up -d
+	@COMPOSE_PROFILES=$(COMPOSE_PROFILES) docker compose up -d
 
 docker-down:
-	@docker compose down
+	@COMPOSE_PROFILES=$(COMPOSE_PROFILES) docker compose down
 
 # Clean up build artifacts
 clean:

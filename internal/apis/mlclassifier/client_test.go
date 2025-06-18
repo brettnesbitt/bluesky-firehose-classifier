@@ -25,8 +25,8 @@ func TestClient_Classify_Success(t *testing.T) {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")   // Important: Set Content-Type header
-		fmt.Fprintln(w, `[{"label": "test", "score": 0.8}]`) // Correct JSON response
+		w.Header().Set("Content-Type", "application/json")  // Important: Set Content-Type header
+		fmt.Println(w, `[{"label": "test", "score": 0.8}]`) // Correct JSON response
 	}))
 	defer testServer.Close()
 
@@ -66,7 +66,7 @@ func TestClient_Classify_Error_Marshal(t *testing.T) {
 
 		// Respond with a mock JSON response
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, ``)
+		fmt.Println(w, ``)
 	}))
 	defer testServer.Close()
 
@@ -109,7 +109,7 @@ func TestClient_Classify_Error_Non200Status(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Internal Server Error")
+		fmt.Println(w, "Internal Server Error")
 	}))
 
 	defer testServer.Close()

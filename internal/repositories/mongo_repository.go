@@ -2,9 +2,11 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"stockseer.ai/blueksy-firehose/internal/models"
 )
 
 // MongoRepository implements the Repository interface using MongoDB.
@@ -20,8 +22,19 @@ func NewMongoRepository(client *mongo.Client, dbName, collectionName string) *Mo
 
 // Insert inserts a document into the MongoDB collection.
 func (r *MongoRepository) Insert(data interface{}) error {
-	_, err := r.collection.InsertOne(context.Background(), data)
-	return err
+	switch v := data.(type) {
+	case *models.ProtoMessage:
+		// handle ProtoMessage
+		_data, _ := v.WithDateTime()
+		_, err := r.collection.InsertOne(context.Background(), _data)
+		return err
+	case models.CategoryMetrics:
+		// handle CategoryMetrics
+		_, err := r.collection.InsertOne(context.Background(), data)
+		return err
+	default:
+		return fmt.Errorf("unsupported data type: %T", data)
+	}
 }
 
 // FindAll retrieves all documents from the collection.
