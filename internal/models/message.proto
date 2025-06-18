@@ -1,0 +1,212 @@
+syntax = "proto3";
+
+package stockseer.ai.blueksy.firehose.models;
+
+option go_package = "stockseer.ai/blueksy-firehose/internal/models";
+
+
+
+message Label {
+    optional string type = 1 [json_name = "$type"];
+    repeated Value values = 2;
+}
+
+message Value {
+    optional string type = 1 [json_name = "$type"];
+    string val = 2;
+}
+
+message Entity {
+    optional string type = 1 [json_name = "$type"];
+    optional Index index = 2;
+    optional string value = 3;
+}
+
+// Identity 
+message Identity {
+    string did = 1;
+    string handle = 2;
+    int64 seq = 3;
+    string time = 4;
+}
+
+// Facet
+message Facet {
+    optional string type = 1 [json_name = "$type"];
+    repeated Feature features = 2;
+    optional Index index = 3;
+}
+
+// Feature
+message Feature {
+    optional string type = 1 [json_name = "$type"];
+    optional Link link = 2;
+    optional string uri = 3;
+    optional string tag = 4;
+    optional string did = 5;
+}
+
+// Link
+message Link {
+    string uri = 1;
+}
+
+// Index
+message Index {
+    optional string type = 1 [json_name = "$type"];
+    int32 byte_start = 2 [json_name = "byteStart"];
+    int32 byte_end = 3 [json_name = "byteEnd"];
+    optional int32 end = 4;
+    optional int32 start = 5;
+}
+
+// Embed
+message Embed {
+    string type = 1 [json_name = "$type"];
+    repeated EmbedImage images = 2;
+    optional EmbedExternal external = 3;
+    optional EmbedMedia media = 4;
+    optional EmbedVideo video = 5;
+    optional AspectRatio aspect_ratio = 6 [json_name = "aspectRatio"];
+    optional EmbedRecord record = 7;
+    optional string alt = 8;
+    optional string alttext = 9;
+    optional string captions = 10;
+    map<string, string> data = 11;
+    optional string uri = 12;
+}
+
+// EmbedVideo
+message EmbedVideo {
+    optional string type = 1 [json_name = "$type"];
+    Blob ref = 2;
+    optional string mime_type = 3 [json_name = "mimeType"];
+    optional int32 size = 4;
+}
+
+// EmbedRecord
+message EmbedRecord {
+    optional string type = 1 [json_name = "$type"];
+    optional string cid = 2;
+    optional string uri = 3;
+    optional Record record = 4;
+} 
+
+// EmbedMedia
+message EmbedMedia {
+    optional string type = 1 [json_name = "$type"];
+    optional EmbedExternal external = 2;
+    repeated Image images = 3;
+    optional AspectRatio aspect_ratio = 4 [json_name = "aspectRatio"];
+    optional EmbedVideo video = 5;
+    optional string alt = 6;
+}
+
+// EmbedExternal
+message EmbedExternal {
+    optional string type = 1 [json_name = "$type"];
+    optional string description = 2;
+    optional Image thumb = 3;
+    optional string title = 4;
+    optional string uri = 5;
+}
+
+message EmbedImage {
+    optional string type = 1 [json_name = "$type"];
+    optional string alt = 2;
+    optional Image image = 3;
+    optional AspectRatio aspect_ratio = 4 [json_name = "aspectRatio"];
+    optional string captions = 5;
+    map<string, string> data = 6;
+}
+
+message AspectRatio {
+    optional string type = 1 [json_name = "$type"];
+    int32 height = 2;
+    int32 width = 3;
+}
+
+message Image {
+    optional string type = 1 [json_name = "$type"];
+    optional Blob ref = 2;
+    optional string mime_type = 3 [json_name = "mimeType"];
+    optional int32 size = 4;
+    optional AspectRatio aspect_ratio = 5 [json_name = "aspectRatio"];
+    optional string alt = 6;
+    optional Image image = 7;
+    optional string cid = 8;
+}
+
+message Blob {
+    optional string link = 1 [json_name = "$link"];
+}
+
+message Ref {
+    optional string type = 1 [json_name = "$type"];
+    optional string cid = 2;
+    optional string uri = 3;
+    optional string link = 4 [json_name = "$link"];
+    optional string ref = 5;
+    optional string validation_status = 6 [json_name = "validationStatus"];
+    optional Commit commit = 7;
+}
+
+message Reply {
+    optional string type = 1 [json_name = "$type"];
+    Ref parent = 2;
+    Ref root = 3;
+}
+
+message Record {
+    string type = 1 [json_name = "$type"];
+    string created_at = 2 [json_name = "createdAt"];
+    repeated string langs = 3;
+    string text = 4;
+    optional Embed embed = 5;
+    optional Reply reply = 6;
+    repeated Facet facets = 7;
+    repeated string tags = 8;
+    optional string via = 9;
+    optional string label = 10;
+    optional string bridgy_original_text = 11 [json_name = "bridgyOriginalText"];
+    optional string bridgy_original_url = 12 [json_name = "bridgyOriginalUrl"];
+    optional string actor = 13;
+    optional int32 size = 14;
+    optional string cid = 15;
+    optional string uri = 16;
+    optional Label labels = 17;
+    repeated Entity entities = 18;
+    optional EmbedExternal external = 19;
+    repeated string lang = 20; // alternate to langs
+    optional string title = 21;
+    optional string visibility = 22;
+    optional string space_aoisora_post_via = 23 [json_name = "space.aoisora.post.via"];
+}
+
+message Commit {
+    string rev = 1;
+    string operation = 2;
+    string collection = 3;
+    string rkey = 4;
+    Record record = 5;
+    string cid = 6;
+}
+
+message ProtoMessage {
+    string did = 1;
+    int64 time_us = 2;
+    string kind = 3;
+    Commit commit = 4;
+    repeated string categories = 5;
+    optional string fin_sentiment = 6;
+    optional Account account = 7;
+    optional Identity identity = 8;
+}
+
+message Account {
+    bool active = 1;
+    string did = 2;
+    int64 seq = 3;
+    string time = 4;
+    optional string status = 5;
+}

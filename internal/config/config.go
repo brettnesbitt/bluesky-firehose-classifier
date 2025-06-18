@@ -28,6 +28,8 @@ type AppConfig struct {
 	RuleContainsHashtag        bool
 	RuleContainsKeywordsValues string
 	RuleContainsHashtagValues  string
+	RuleMessageKind            bool
+	RuleMessageCommitOperation bool
 
 	TextCategoryClassifier     bool
 	TextFinSentimentClassifier bool
@@ -47,20 +49,37 @@ func (c AppConfig) String() string {
 
 	sb.WriteString("\n  Rules:\n")
 	sb.WriteString(fmt.Sprintf("    English Only: %t\n", c.RuleEnglishOnly))
-	sb.WriteString(fmt.Sprintf("    Minimum Length: %t (Value: %d)\n", c.RuleMinLength, c.RuleMinLengthValue))
+	sb.WriteString(
+		fmt.Sprintf("    Minimum Length: %t (Value: %d)\n", c.RuleMinLength, c.RuleMinLengthValue),
+	)
 	sb.WriteString(fmt.Sprintf("    Contains URL: %t\n", c.RuleContainsURL))
-	sb.WriteString(fmt.Sprintf("    Contains Keywords: %t (Values: %s)\n", c.RuleContainsKeywords, c.RuleContainsKeywordsValues))
-	sb.WriteString(fmt.Sprintf("    Contains Hashtag: %t (Values: %s)\n", c.RuleContainsHashtag, c.RuleContainsHashtagValues))
+	sb.WriteString(
+		fmt.Sprintf(
+			"    Contains Keywords: %t (Values: %s)\n",
+			c.RuleContainsKeywords,
+			c.RuleContainsKeywordsValues,
+		),
+	)
+	sb.WriteString(
+		fmt.Sprintf(
+			"    Contains Hashtag: %t (Values: %s)\n",
+			c.RuleContainsHashtag,
+			c.RuleContainsHashtagValues,
+		),
+	)
+	sb.WriteString(fmt.Sprintf("    Message Kind: %t\n", c.RuleMessageKind))
+	sb.WriteString(fmt.Sprintf("    Message Commit Operation: %t\n", c.RuleMessageCommitOperation))
 
 	sb.WriteString("\n  Text Processing:\n")
 	sb.WriteString(fmt.Sprintf("    Category Classifier: %t\n", c.TextCategoryClassifier))
-	sb.WriteString(fmt.Sprintf("    Financial Sentiment Classifier: %t\n", c.TextFinSentimentClassifier))
+	sb.WriteString(
+		fmt.Sprintf("    Financial Sentiment Classifier: %t\n", c.TextFinSentimentClassifier),
+	)
 
 	return sb.String()
 }
 
 func LoadConfig() (*AppConfig, error) {
-
 	// Initialize Viper
 	viper.SetConfigFile(".env") // Set the path to your .env file
 	viper.SetConfigType("env")  // Set the file format (optional, as Viper can infer)
@@ -83,6 +102,8 @@ func LoadConfig() (*AppConfig, error) {
 		RuleContainsKeywordsValues:    viper.GetString("RULE_CONTAINS_KEYWORDS_VALUE"),
 		RuleContainsHashtag:           viper.GetBool("RULE_CONTAINS_HASHTAG"),
 		RuleContainsHashtagValues:     viper.GetString("RULE_CONTAINS_HASHTAG_VALUE"),
+		RuleMessageKind:               viper.GetBool("RULE_MESSAGE_KIND"),
+		RuleMessageCommitOperation:    viper.GetBool("RULE_MESSAGE_COMMIT_OPERATION"),
 		TextCategoryClassifier:        viper.GetBool("TEXT_CATEGORY_CLASSIFIER"),
 		TextFinSentimentClassifier:    viper.GetBool("TEXT_FIN_SENTIMENT_CLASSIFIER"),
 		TextCategoryClassifierURL:     viper.GetString("TEXT_CATEGORY_CLASSIFIER_URL"),

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"stockseer.ai/blueksy-firehose/internal/config"
+	"stockseer.ai/blueksy-firehose/internal/models"
 )
 
 func TestRuleFactory(t *testing.T) {
@@ -90,7 +91,15 @@ func TestRuleFactory(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, results := rf.EvaluateAll(tc.text)
+			// Create a mock message
+			mockMessage := &models.ProtoMessage{
+				Commit: &models.Commit{
+					Record: &models.Record{
+						Text: tc.text,
+					},
+				},
+			}
+			_, results := rf.EvaluateAll(tc.text, mockMessage)
 			if len(results) != len(tc.expectedResults) {
 				t.Errorf("Expected %d results, got %d", len(tc.expectedResults), len(results))
 			}
@@ -101,7 +110,13 @@ func TestRuleFactory(t *testing.T) {
 					continue
 				}
 				if actual != expected {
-					t.Errorf("Rule '%s': expected %t, got %t for text: %s", ruleName, expected, actual, tc.text)
+					t.Errorf(
+						"Rule '%s': expected %t, got %t for text: %s",
+						ruleName,
+						expected,
+						actual,
+						tc.text,
+					)
 				}
 			}
 		})
@@ -111,11 +126,20 @@ func TestRuleFactory(t *testing.T) {
 func ExampleRuleFactory() {
 	rf := NewRuleFactory()
 
-	rf.AddRule("Contains 'example'", func(text string) bool {
+	// Create a mock message
+	mockMessage := &models.ProtoMessage{
+		Commit: &models.Commit{
+			Record: &models.Record{
+				Text: "",
+			},
+		},
+	}
+
+	rf.AddRule("Contains 'example'", func(text string, message *models.ProtoMessage) bool {
 		return strings.Contains(text, "example")
 	})
 
-	_, results := rf.EvaluateAll("This is an example text.")
+	_, results := rf.EvaluateAll("This is an example text.", mockMessage)
 	fmt.Println(results["Contains 'example'"])
 	// Output: true
 }

@@ -1,40 +1,67 @@
 # bluesky-firehose-classifier
 
-## MQTT Configuration
-To enable MQTT publishing, set the following environment variables:
+The `bluesky-firehose-classifier` is a robust application designed to process and analyze Bluesky social media data. The system consists of two main components:
 
-- `MQTT_BROKER_URL`: The URL of the MQTT broker.
-- `MQTT_USERNAME`: Your MQTT broker username.
-- `MQTT_PASSWORD`: Your MQTT broker password.
-- `MQTT_ENABLED`: Set to `true` to enable MQTT publishing.
-- `MQTT_BROKER_URL`: The URL of the MQTT broker.
-- `MQTT_USERNAME`: Your MQTT broker username.
-- `MQTT_PASSWORD`: Your MQTT broker password.
-- `MQTT_TOPIC`: The topic to which messages will be published.
+1. **WebSocket Reader (`cmd/wss/main.go`)**
+   - Connects to the Bluesky JetStream WebSocket to consume raw JSON data
+   - Applies configurable filtering rules to focus on relevant content
+   - Publishes filtered data to an MQTT broker for further processing
 
-Ensure these environment variables are set in your `.env` file or in your environment before running the application.
-
-The `bluesky-firehose-classifier` is a robust application designed to connect to the Bluesky JetStream WebSocket, consuming JSON data for advanced text processing. This application allows you to apply filters to incoming data, process it with built-in text classifiers, or publish it to an MQTT broker for further consumption. It is currently optimized for processing new posts but can be easily adapted to meet specific needs.
+2. **Server (`cmd/server/main.go`)**
+   - Subscribes to MQTT topics to consume processed data
+   - Performs advanced text processing and classification
+   - Stores processed data in MongoDB
+   - Provides metrics collection and monitoring
 
 ## Key Features
 
-- **Data Filtering**: Apply custom filters to control the data flow and focus on relevant content.
-- **Text Classification**: Utilize integrated classifiers to analyze and categorize text data.
-- **MQTT Integration**: Seamlessly publish processed data to an MQTT broker for downstream applications.
+- **Data Filtering**: Apply custom filters to control the data flow and focus on relevant content
+- **Text Classification**: Utilize integrated classifiers to analyze and categorize text data
+- **MQTT Integration**: Seamless data transfer between components via MQTT
+- **MongoDB Storage**: Persistent storage of processed data and metrics
+- **Metrics Collection**: Real-time monitoring of processing performance
+
+## Architecture Overview
+
+The system follows a decoupled architecture where:
+
+1. The WebSocket reader component (`wss/main.go`):
+   - Connects to Bluesky JetStream
+   - Applies basic filtering rules
+   - Publishes raw data to MQTT
+   - Runs independently and can be scaled separately
+
+2. The server component (`server/main.go`):
+   - Subscribes to MQTT topics
+   - Performs advanced text processing
+   - Stores results in MongoDB
+   - Collects and reports metrics
 
 ## Getting Started
 
-To run the application, use `go run main.go` or modify the `.env` file for basic configuration. For more advanced use-cases, you can build the application using `make build` or `make docker-build`. To run the app, choose between `make run` or `make docker-up` based on your preference.
+The application can be run in two modes:
+
+1. **WebSocket Reader Only**
+   ```bash
+   # Run the WebSocket reader
+   go run cmd/wss/main.go
+   # Or using Docker
+   make docker-up-wss
+   ```
+
+2. **Full System (WebSocket Reader + Server)**
+   ```bash
+   # Run both components
+   make docker-up
+   ```
 
 ### Dotenvx
 
-You will need to install a copy of dotenvx on your machine to take advantage of the .env file while using
-make. [https://github.com/dotenvx/dotenvx]
+You will need to install a copy of dotenvx on your machine to take advantage of the .env file while using make. [https://github.com/dotenvx/dotenvx]
 
 ### Linting
 
-You will need a copy of golangci-lint on your machine to use the lint command in the makefile.
-For more information visit [https://golangci-lint.run/welcome/install/#local-installation]
+You will need a copy of golangci-lint on your machine to use the lint command in the makefile. For more information visit [https://golangci-lint.run/welcome/install/#local-installation]
 
 ## Configuration
 
@@ -80,6 +107,20 @@ predict the sentiment of posts related to finances.
 | TEXT_FIN_SENTIMENT_CLASSIFIER | Enables text sentiment classification | true | No |
 
 <br/><br/> 
+
+## MQTT Configuration
+To enable MQTT publishing, set the following environment variables:
+
+- `MQTT_BROKER_URL`: The URL of the MQTT broker.
+- `MQTT_USERNAME`: Your MQTT broker username.
+- `MQTT_PASSWORD`: Your MQTT broker password.
+- `MQTT_ENABLED`: Set to `true` to enable MQTT publishing.
+- `MQTT_BROKER_URL`: The URL of the MQTT broker.
+- `MQTT_USERNAME`: Your MQTT broker username.
+- `MQTT_PASSWORD`: Your MQTT broker password.
+- `MQTT_TOPIC`: The topic to which messages will be published.
+
+Ensure these environment variables are set in your `.env` file or in your environment before running the application.
 
 ## Usage
 

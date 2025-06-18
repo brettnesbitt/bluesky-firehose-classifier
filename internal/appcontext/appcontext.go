@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"stockseer.ai/blueksy-firehose/internal/config"
+	"stockseer.ai/blueksy-firehose/internal/interfaces"
 	"stockseer.ai/blueksy-firehose/internal/logger"
 	"stockseer.ai/blueksy-firehose/internal/repositories"
 )
@@ -18,23 +19,34 @@ type AppContext struct {
 	Config      config.AppConfig
 	Log         logger.Logger
 	MongoClient *mongo.Client
+	MQTTClient  interfaces.MqttClient
 	MetricsRepo repositories.Repository
 	MessageRepo repositories.Repository
 }
 
 // NewAppContext creates a new AppContext.
-func NewAppContext(config *config.AppConfig) AppContext {
+func NewAppContext(
+	config *config.AppConfig,
+	wssReader bool,
+	mqttClient interfaces.MqttClient,
+) AppContext {
 	log := logger.NewLogger()
-	// Connect to MongoDB
-	clientOptions := options.Client().ApplyURI(config.MongoURI)
-	client, err := mongo.Connect(context.Background(), clientOptions)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to MongoDB: %s", err))
-	}
 
+	var metricsRepo repositories.Repository
+	var messageRepo repositories.Repository
+	var client *mongo.Client
 	// Initialize repositories
-	metricsRepo := repositories.NewMongoRepository(client, "blueskyfh", "metrics")
-	messageRepo := repositories.NewMongoRepository(client, "blueskyfh", "messages")
+	if !wssReader {
+		// Connect to MongoDB
+		clientOptions := options.Client().ApplyURI(config.MongoURI)
+		client, err := mongo.Connect(context.Background(), clientOptions)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to connect to MongoDB: %s", err))
+		}
+
+		metricsRepo = repositories.NewMongoRepository(client, "blueskyfh", "metrics")
+		messageRepo = repositories.NewMongoRepository(client, "blueskyfh", "messages")
+	}
 
 	return AppContext{
 		Config:      *config,
@@ -42,6 +54,7 @@ func NewAppContext(config *config.AppConfig) AppContext {
 		MongoClient: client,
 		MetricsRepo: metricsRepo,
 		MessageRepo: messageRepo,
+		MQTTClient:  mqttClient,
 	}
 }
 

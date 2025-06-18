@@ -13,7 +13,6 @@ import (
 
 // StartServer starts the Gin server.
 func StartServer(ctx context.Context) error {
-
 	// get our app config and logger
 	appCtx, _ := appcontext.AppContextFromContext(ctx)
 	cfg := appCtx.Config
