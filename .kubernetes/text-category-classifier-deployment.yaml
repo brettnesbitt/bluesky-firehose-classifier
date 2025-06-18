@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose -f ../docker-compose.yaml convert --profile default
+    kompose.version: 1.36.0 (HEAD)
+  labels:
+    io.kompose.service: text-category-classifier
+  name: text-category-classifier
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: text-category-classifier
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose -f ../docker-compose.yaml convert --profile default
+        kompose.version: 1.36.0 (HEAD)
+      labels:
+        io.kompose.service: text-category-classifier
+    spec:
+      containers:
+        - image: text-category-classifier
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:3101/livez
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 5
+          name: text-category-classifier
+          ports:
+            - containerPort: 3101
+              protocol: TCP
+      restartPolicy: Always

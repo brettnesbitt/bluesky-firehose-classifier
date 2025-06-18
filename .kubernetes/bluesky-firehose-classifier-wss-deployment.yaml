@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose -f ../docker-compose.yaml convert --profile default
+    kompose.version: 1.36.0 (HEAD)
+  labels:
+    io.kompose.service: bluesky-firehose-classifier-wss
+  name: bluesky-firehose-classifier-wss
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: bluesky-firehose-classifier-wss
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose -f ../docker-compose.yaml convert --profile default
+        kompose.version: 1.36.0 (HEAD)
+      labels:
+        io.kompose.service: bluesky-firehose-classifier-wss
+    spec:
+      containers:
+        - image: bluesky-firehose-classifier-wss
+          name: bluesky-firehose-classifier-wss
+          ports:
+            - containerPort: 3001
+              protocol: TCP
+      restartPolicy: Always
