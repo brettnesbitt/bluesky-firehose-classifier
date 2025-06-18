@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose -f ../docker-compose.yaml convert --profile default
+    kompose.version: 1.36.0 (HEAD)
+  labels:
+    io.kompose.service: bluesky-firehose-classifier-server
+  name: bluesky-firehose-classifier-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: bluesky-firehose-classifier-server
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose -f ../docker-compose.yaml convert --profile default
+        kompose.version: 1.36.0 (HEAD)
+      labels:
+        io.kompose.service: bluesky-firehose-classifier-server
+    spec:
+      containers:
+        - image: bluesky-firehose-classifier-server
+          name: bluesky-firehose-classifier-server
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+      restartPolicy: Always

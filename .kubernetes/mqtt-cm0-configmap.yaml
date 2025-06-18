@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+  mosquitto.passwd: guest:$7$101$uFWu1ea2Jnj6ddLB$8Ln0eGn1865ek1mJKlWKCCG2fX5uf7ATmK3NjWd6NtZN3Jsp1BCZgVWrY9GNQmn3gwTHBmGhHutU93HHmLI/hQ==
+kind: ConfigMap
+metadata:
+  annotations:
+    use-subpath: "true"
+  labels:
+    io.kompose.service: mqtt
+  name: mqtt-cm0
