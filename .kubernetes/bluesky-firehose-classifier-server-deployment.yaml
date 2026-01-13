@@ -21,8 +21,15 @@ spec:
         io.kompose.service: bluesky-firehose-classifier-server
     spec:
       containers:
-        - image: bluesky-firehose-classifier-server
+        - image: bluesky-firehose-classifier-server:latest-rpi
           name: bluesky-firehose-classifier-server
+          imagePullPolicy: Always
+          env:
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: MONGO_URI
           ports:
             - containerPort: 3000
               protocol: TCP

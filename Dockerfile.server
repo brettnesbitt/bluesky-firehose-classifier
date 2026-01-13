@@ -21,7 +21,7 @@ COPY . .
 COPY .env.docker .env
 
 # Build the Go binary
-RUN make build-app-only
+RUN make build-server-only
 
 RUN chmod +x /app/bin/server
 

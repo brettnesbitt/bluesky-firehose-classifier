@@ -84,10 +84,15 @@ func LoadConfig() (*AppConfig, error) {
 	viper.SetConfigFile(".env") // Set the path to your .env file
 	viper.SetConfigType("env")  // Set the file format (optional, as Viper can infer)
 
-	// Read the configuration file
+	// Read the configuration file (optional - don't panic if it doesn't exist)
 	if err := viper.ReadInConfig(); err != nil {
-		panic(fmt.Errorf("fatal error config file: %w", err))
+		// Config file not found; ignore error if desired
+		fmt.Printf("Warning: Config file not found: %v\n", err)
 	}
+	
+	// IMPORTANT: Read from environment variables (overrides file values)
+	// This allows Kubernetes secrets to work
+	viper.AutomaticEnv()
 
 	cfg := &AppConfig{
 		DevMode:                       viper.GetBool("DEV_MODE"),

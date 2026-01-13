@@ -13,6 +13,8 @@ The `bluesky-firehose-classifier` is a robust application designed to process an
    - Stores processed data in MongoDB
    - Provides metrics collection and monitoring
 
+This application provides the backbone of our real-time social media sentiment analysis on the Stockseer AI platform (https://stockseer.ai). You can see this data in real-time in the social media section of the unified feed
+
 ## Key Features
 
 - **Data Filtering**: Apply custom filters to control the data flow and focus on relevant content

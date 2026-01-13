@@ -21,8 +21,15 @@ spec:
         io.kompose.service: bluesky-firehose-classifier-wss
     spec:
       containers:
-        - image: bluesky-firehose-classifier-wss
+        - image: us-central1-docker.pkg.dev/quotopia-391900/bluesky-fh/bluesky-firehose-classifier-wss:latest-rpi
           name: bluesky-firehose-classifier-wss
+          imagePullPolicy: Always
+          env:
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: MONGO_URI
           ports:
             - containerPort: 3001
               protocol: TCP

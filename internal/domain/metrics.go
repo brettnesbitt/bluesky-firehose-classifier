@@ -152,15 +152,24 @@ func (dc *DataCollector) LogMetrics(server bool) {
 
 // StartMetrics begins the periodic logging of collected metrics.
 func (dc *DataCollector) StartMetrics(appCtx appcontext.AppContext, server bool) error {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
 	dc.AppCtx = appCtx
 	dc.AppCtx.Log.Info("Metrics collection started")
 
 	// Initialize sentimentSinceLog with empty metrics for tracked categories
+	if dc.sentimentSinceLog == nil {
+		dc.sentimentSinceLog = make(map[string]*models.CategoryMetrics)
+	}
+
 	for _, category := range trackedCategories {
-		dc.sentimentSinceLog[category] = &models.CategoryMetrics{
-			Category: category,
-			Negative: 0,
-			Positive: 0,
+		if _, exists := dc.sentimentSinceLog[category]; !exists {
+			dc.sentimentSinceLog[category] = &models.CategoryMetrics{
+				Category: category,
+				Negative: 0,
+				Positive: 0,
+			}
 		}
 	}
 

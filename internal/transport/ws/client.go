@@ -89,6 +89,7 @@ func ConsumeMessages(
 			text = m.Commit.Record.Text
 		}
 		passed, _ := rules.EvaluateAll(text, &m)
+		logger.Debug("message passed rules: %v", passed)
 		if passed {
 			if err := dc.Add(&m); err != nil {
 				logger.Error("failed to add message", err)

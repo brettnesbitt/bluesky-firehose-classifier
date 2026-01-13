@@ -28,7 +28,7 @@ func main() {
 	// Initialize MQTT client if enabled, ensures that we can connect...
 	mqttClient, err := mqtt.NewMqttClient(
 		appContext,
-		"server",
+		"wss",
 		nil,
 	) // Pass full app context with MongoDB
 	if err != nil {
