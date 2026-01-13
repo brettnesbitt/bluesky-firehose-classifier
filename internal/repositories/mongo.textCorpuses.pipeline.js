@@ -1,7 +1,7 @@
 [
   {
     $match: {
-      finsentiment: {
+      fin_sentiment: {
         $in: ["positive", "negative"]
       },
       categories: {
@@ -19,7 +19,7 @@
       _id: 0,
       text: "$commit.record.text",
       createdAtDate: {
-        $toDate: "$commit.record.createdat"
+        $toDate: "$commit.record.created_at"
       }
     }
   },
@@ -50,23 +50,24 @@
           }
         },
         {
-          $project: {
-            corpus: {
-              $reduce: {
-                input: "$texts",
-                initialValue: "",
-                in: {
-                  $concat: [
+          "$project": {
+            "corpus": {
+              "$reduce": {
+                "input": "$texts",
+                "initialValue": "",
+                "in": {
+                  "$concat": [
                     "$$value",
+                    // Add a space separator, but only if the string isn't empty
                     {
-                      $cond: [
-                        {
-                          $eq: ["$$value", ""]
-                        },
-                        "",
-                        " "
-                      ]
+                      "$cond": {
+                        "if": { "$eq": [ "$$value", "" ] },
+                        "then": "",
+                        "else": " "
+                      }
                     },
+                    // Add the prefix for every item
+                    "[POST]: ",
                     "$$this"
                   ]
                 }

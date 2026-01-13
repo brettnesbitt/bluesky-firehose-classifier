@@ -52,6 +52,15 @@ build-app-only:
 	@echo "Building wss..."
 	@CGO_ENABLED=0 go build -o bin/wss -v $(BUILD_FLAGS) ./cmd/wss
 
+build-wss-only:
+	@echo "Building wss..."
+	@CGO_ENABLED=0 go build -o bin/wss -v $(BUILD_FLAGS) ./cmd/wss
+
+build-server-only:
+	@echo "Building server..."
+	@CGO_ENABLED=0 go build -o bin/server -v $(BUILD_FLAGS) ./cmd/server
+	
+
 # Build the docker image
 docker-build: build-app-only
 	@COMPOSE_PROFILES=$(COMPOSE_PROFILES) docker compose build

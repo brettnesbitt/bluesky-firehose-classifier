@@ -100,7 +100,8 @@ func (m *ProtoMessage) WithDateTime() (*map[string]interface{}, error) {
 	}
 
 	// Add DateTime field if TimeUs is present
-	data["datetime"] = time.UnixMicro(m.TimeUs).String()
+	// Store as time.Time object so MongoDB saves it as ISODate
+	data["datetime"] = time.UnixMicro(m.TimeUs)
 
 	return &data, nil
 }

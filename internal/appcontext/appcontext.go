@@ -41,8 +41,17 @@ func NewAppContext(
 		clientOptions := options.Client().ApplyURI(config.MongoURI)
 		client, err := mongo.Connect(context.Background(), clientOptions)
 		if err != nil {
+			log.Error("Failed to connect to MongoDB: %v", err)
 			panic(fmt.Sprintf("Failed to connect to MongoDB: %s", err))
 		}
+
+		// Verify connection with ping
+		if err := client.Ping(context.Background(), nil); err != nil {
+			log.Error("Failed to ping MongoDB: %v", err)
+			panic(fmt.Sprintf("Failed to ping MongoDB: %s", err))
+		}
+
+		log.Info("Successfully connected to MongoDB")
 
 		metricsRepo = repositories.NewMongoRepository(client, "blueskyfh", "metrics")
 		messageRepo = repositories.NewMongoRepository(client, "blueskyfh", "messages")

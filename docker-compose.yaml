@@ -12,18 +12,6 @@ services:
     volumes:
       - ./includes/mosquitto.passwd:/mosquitto/passwd_file
       - ./includes/mosquitto.conf:/mosquitto/config/mosquitto.conf
-  mongo:
-    container_name: mongo
-    image: mongo:latest
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: adminpass
-    ports:
-      - "27017:27017"
-    volumes:
-      - /Users/brettnesbitt/workspace/mongo_data:/data/db
-    profiles: ["default", "mongo"]
   text-category-classifier:
     container_name: text-category-classifier
     build:
@@ -67,6 +55,8 @@ services:
     ports:
       - "3000:3000"
     profiles: ["default", "bluesky-firehose-classifier-server"]
+    env_file:
+      - .env
     #depends_on:
     #  - text-category-classifier
     #  - text-finsentiment-classifier
@@ -81,8 +71,9 @@ services:
     profiles: ["default", "bluesky-firehose-classifier-wss"]
     ports:
       - "3001:3001"
+    env_file:
+      - .env
     depends_on:
-      - mongo
       - text-category-classifier
       - text-finsentiment-classifier
 

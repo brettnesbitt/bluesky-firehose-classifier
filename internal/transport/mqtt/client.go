@@ -67,8 +67,11 @@ func NewMqttClient(
 	options.SetUsername(mc.config.MQTTUsername)
 	options.SetPassword(mc.config.MQTTPassword)
 
-	options.SetKeepAlive(60 * time.Second)
+	options.SetKeepAlive(120 * time.Second)      // Increased from 60s to 120s
+	options.SetPingTimeout(30 * time.Second)     // Allow 30s for ping response
 	options.SetConnectTimeout(30 * time.Second)
+	options.SetWriteTimeout(10 * time.Second)    // Timeout for write operations
+	options.SetMaxReconnectInterval(5 * time.Minute) // Max time between reconnect attempts
 
 	// Set up MQTT client callbacks
 	options.OnConnect = mc.onConnect
